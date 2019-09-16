@@ -13,6 +13,10 @@
 void Model::run(string doc_pt, string res_dir)
 {
   double M, Mk;
+  Pmat<double> pz_mb;
+  vector<Biterm> mb;
+  pz_mb.resize(mb_size, K);
+
   load_docs(doc_pt);
   model_init();
 
@@ -24,14 +28,25 @@ void Model::run(string doc_pt, string res_dir)
     fflush(stdout);
 
     rho *= 1 - compute_nu(it);
-    weight = (compute_nu(it) * bs.size()) / rho;
+    weight = (compute_nu(it) * bs.size()) / (mb_size * rho);
 
     if (rho < 10e-200)
     {
       reset_rho();
     }
-    int b = Sampler::uni_sample(bs.size());
-    update_biterm(bs[b]);
+
+    for (int inner_iter = 0; inner_iter < mb_size; inner_iter++)
+    {
+      int b = Sampler::uni_sample(bs.size());
+      mb.push_back(bs[b]);
+      compute_pz_b(bs[b], pz_mb[inner_iter]);
+    }
+
+    for (int inner_iter = 0; inner_iter < mb_size; inner_iter++)
+    {
+      assign_biterm_topic(mb[inner_iter], pz_mb[inner_iter].to_vector());
+    }
+    mb.clear();
 
     if (it % (int)(n_iter / n_h_opt) == 0)
     {

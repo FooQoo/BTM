@@ -26,6 +26,7 @@ protected:
   int W;      // vocabulary size
   int K;      // number of topics
   int n_iter; // maximum number of iteration of Gibbs Sampling
+  int mb_size;
   int save_step;
 
   Pvec<double> alpha; // hyperparameters of p(z)
@@ -52,6 +53,7 @@ public:
                               n_iter(n_iter), has_background(has_b),
                               save_step(save_step)
   {
+    mb_size = 10;
     n_h_opt = 100;
     rho = 1.0;
     pw_b.resize(W);

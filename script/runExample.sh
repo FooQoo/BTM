@@ -5,7 +5,7 @@ K=20   # number of topics
 
 # hyper parameters
 alpha=`echo "scale=3;50/$K"|bc`
-beta=0.005
+beta=0.01
 niter=1000000
 save_step=100000000 # 結果を保存するステップ
 
