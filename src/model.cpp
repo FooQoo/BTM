@@ -29,7 +29,6 @@ void Model::run(string doc_pt, string res_dir)
     if (rho < 10e-200)
     {
       reset_rho();
-      optimize_alpha();
     }
     int b = Sampler::uni_sample(bs.size());
     update_biterm(bs[b]);
@@ -37,6 +36,7 @@ void Model::run(string doc_pt, string res_dir)
     if (it % (int)(n_iter / n_h_opt) == 0)
     {
       reset_rho();
+      optimize_alpha();
     }
 
     if (it % save_step == 0)
