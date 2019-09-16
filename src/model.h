@@ -9,6 +9,7 @@
 #include <vector>
 #include <fstream>
 #include <cmath>
+#include <boost/math/special_functions/digamma.hpp>
 #include "biterm.h"
 #include "doc.h"
 #include "pvec.h"
@@ -27,10 +28,11 @@ protected:
   int n_iter; // maximum number of iteration of Gibbs Sampling
   int save_step;
 
-  double alpha;  // hyperparameters of p(z)
-  double beta;   // hyperparameters of p(w|z)
-  double weight; // hyperparameters of weighted decay
-  double rho;    // hyperparameters of weighted decay
+  Pvec<double> alpha; // hyperparameters of p(z)
+  double beta;        // hyperparameters of p(w|z)
+  double weight;      // hyperparameters of weighted decay
+  double rho;         // hyperparameters of weighted decay
+  int n_h_opt;
 
   // sample recorders
   Pvec<double> nb_z; // n(b|z), size K*1
@@ -46,14 +48,17 @@ protected:
 
 public:
   Model(int K, int W, double a, double b, int n_iter, int save_step,
-        bool has_b = false) : K(K), W(W), alpha(a), beta(b),
+        bool has_b = false) : K(K), W(W), beta(b),
                               n_iter(n_iter), has_background(has_b),
                               save_step(save_step)
   {
+    n_h_opt = 100;
     rho = 1.0;
     pw_b.resize(W);
     nwz.resize(K, W);
     nb_z.resize(K);
+    alpha.resize(K);
+    alpha.fill(a);
   }
 
   // run estimate procedures
@@ -92,6 +97,20 @@ private:
       }
     }
     rho = 1.0;
+  };
+
+  void optimize_alpha(int n_inner_it = 10)
+  {
+    double M, Mk;
+    for (int inner_it = 1; inner_it < n_inner_it; ++inner_it)
+    {
+      M = boost::math::digamma(nb_z.sum() + alpha.sum()) - boost::math::digamma(alpha.sum());
+      for (int k = 0; k < K; ++k)
+      {
+        Mk = boost::math::digamma(nb_z[k] + alpha[k]) - boost::math::digamma(alpha[k]);
+        alpha[k] *= Mk / M;
+      }
+    }
   };
 
   void save_res(string res_dir);

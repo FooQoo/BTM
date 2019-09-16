@@ -6,15 +6,14 @@
 #include <ctime>
 #include <algorithm>
 #include <numeric>
-
 #include "sampler.h"
 #include "str_util.h"
 #include "model.h"
 
 void Model::run(string doc_pt, string res_dir)
 {
+  double M, Mk;
   load_docs(doc_pt);
-
   model_init();
 
   cout << "Begin iteration" << endl;
@@ -30,10 +29,15 @@ void Model::run(string doc_pt, string res_dir)
     if (rho < 10e-200)
     {
       reset_rho();
+      optimize_alpha();
     }
-
     int b = Sampler::uni_sample(bs.size());
     update_biterm(bs[b]);
+
+    if (it % (int)(n_iter / n_h_opt) == 0)
+    {
+      reset_rho();
+    }
 
     if (it % save_step == 0)
       save_res(out_dir);
@@ -48,14 +52,8 @@ void Model::model_init()
 {
   srand(time(NULL));
   // random initialize
-  for (int k = 0; k < K; ++k)
-  {
-    nb_z[k] = Sampler::uni_sample();
-    for (int w = 0; w < W; ++w)
-    {
-      nwz[k][w] = Sampler::uni_sample();
-    }
-  }
+  nb_z.rand_init();
+  nwz.rand_init();
 }
 
 // input, each line is a doc
@@ -120,7 +118,7 @@ void Model::compute_pz_b(Biterm &bi, Pvec<double> &pz)
       pw1k = (nwz[k][w1] + beta) / (2 * nb_z[k] + W * beta);
       pw2k = (nwz[k][w2] + beta) / (2 * nb_z[k] + 1 + W * beta);
     }
-    pk = nb_z[k] + alpha;
+    pk = nb_z[k] + alpha[k];
     pz[k] = pk * pw1k * pw2k;
   }
 

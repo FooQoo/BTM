@@ -63,9 +63,7 @@ public:
 	{
 		srand(time(NULL));
 		for (size_t i = 0; i < p.size(); ++i)
-			p[i] = rand() % 100 + 1;
-
-		normalize();
+			p[i] = (double)(rand() % 1000000) / 1000000;
 	}
 
 	void fill(T v)
@@ -154,6 +152,19 @@ public:
 		for (size_t i = 0; i < K; ++i)
 		{
 			p[i] = (p[i] + smoother) / (s + K * smoother);
+		}
+	}
+
+	void normalize(const Pvec<double> smoother)
+	{
+		T s = sum();
+		assert(s >= 0.0);
+
+		int K = p.size();
+		// avoid numerical problem
+		for (size_t i = 0; i < K; ++i)
+		{
+			p[i] = (p[i] + smoother[i]) / (s + smoother.sum());
 		}
 	}
 
